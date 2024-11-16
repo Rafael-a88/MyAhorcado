@@ -45,7 +45,13 @@ def main():
 
 # ------------------- HASTA AQUI LA PARTE DE LA VENTANA PRINCIPAL ------------------- #
 
-
+def conexion():
+    return mysql.connector.connect(
+        host="RafaBBDD",
+        user="root",
+        password="",
+        database="Ahorcado"
+    )
 
 
 if __name__ == "__main__":
