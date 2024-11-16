@@ -7,14 +7,14 @@ import sys
 pygame.init()
 
 # Configuración de la pantalla
-screen_width = 900
-screen_height = 700
-screen = pygame.display.set_mode((screen_width, screen_height))
+ancho_pantalla = 900
+alto_pantalla = 700
+screen = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
 pygame.display.set_caption("Juego del Ahorcado")
 
 # Cargar la fuente
-font = pygame.font.Font(None, 54)
-small_font = pygame.font.Font(None, 36)
+fuente = pygame.font.Font(None, 54)
+fuente_chica = pygame.font.Font(None, 36)
 
 # Colores
 WHITE = (255, 255, 255)
@@ -29,8 +29,8 @@ def main():
         screen.fill(WHITE)  # Fondo blanco
 
         # Título del juego - Colocar lo más arriba posible
-        title_text = font.render("Juego del Ahorcado", True, BLUE)
-        screen.blit(title_text, (screen_width // 2 - title_text.get_width() // 2, 20))
+        title_text = fuente.render("Juego del Ahorcado", True, BLUE)
+        screen.blit(title_text, (ancho_pantalla // 2 - title_text.get_width() // 2, 20))
 
         # Esperar hasta que el jugador cierre la ventana
         for event in pygame.event.get():
@@ -52,6 +52,24 @@ def conexion():
         password="",
         database="Ahorcado"
     )
+
+def obtener_palabras(categoria):
+    """
+    Recupera una lista de palabras de la base de datos según la categoría seleccionada.
+    """
+    bd = conexion()
+    cursor = bd.cursor()
+    if categoria == 'fruta':
+        cursor.execute("SELECT nombre FROM frutas")
+    elif categoria == 'concepto_informatico':
+        cursor.execute("SELECT nombre FROM conceptos_informaticos")
+    elif categoria == 'nombre_persona':
+        cursor.execute("SELECT nombre FROM nombres_persona")
+
+    palabras = cursor.fetchall()
+    cursor.close()
+    bd.close()
+    return [palabra[0] for palabra in palabras]
 
 
 if __name__ == "__main__":
