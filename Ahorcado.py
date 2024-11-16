@@ -12,15 +12,14 @@ alto_pantalla = 700
 screen = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
 pygame.display.set_caption("Juego del Ahorcado")
 
-# Cargar la fuente
-fuente = pygame.font.Font(None, 54)
-fuente_chica = pygame.font.Font(None, 36)
+# Cargar la fuente Roboto
+fuente = pygame.font.Font("Roboto-Regular.ttf", 54)
+fuente_chica = pygame.font.Font("Roboto-Regular.ttf", 36)
 
 # Colores
 WHITE = (255, 255, 255)
 BLUE = (10, 50, 100)
-BLACK = (0,0,0)
-
+BLACK = (0, 0, 0)
 
 def main():
     running = True
@@ -70,6 +69,28 @@ def obtener_palabras(categoria):
     cursor.close()
     bd.close()
     return [palabra[0] for palabra in palabras]
+
+def actualizar_victorias(usuario):
+    """
+    Actualiza el contador de partidas ganadas del usuario en la base de datos.
+    """
+    bd = conexion()
+    cursor = bd.cursor()
+    cursor.execute("UPDATE usuarios SET partidas_ganadas = partidas_ganadas + 1 WHERE nombre = %s", (usuario,))
+    bd.commit()
+    cursor.close()
+    bd.close()
+
+def actualizar_derrotas(usuario):
+    """
+    Actualiza el contador de partidas perdidas del usuario en la base de datos.
+    """
+    bd = conexion()
+    cursor = bd.cursor()
+    cursor.execute("UPDATE usuarios SET partidas_perdidas = partidas_perdidas + 1 WHERE nombre = %s", (usuario,))
+    bd.commit()
+    cursor.close()
+    bd.close()
 
 
 if __name__ == "__main__":
