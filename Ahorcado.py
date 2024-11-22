@@ -1,21 +1,13 @@
 import random
-import pygame
 import sys
 import mysql.connector
-from tkinter import simpledialog, StringVar, ttk
+import pygame
 import tkinter as tk
+from tkinter import simpledialog, StringVar, ttk
 
 # Inicializar Pygame
 pygame.init()
 pygame.mixer.init()
-
-# Añadir un favicon
-favicon = pygame.image.load('ahorcado_6.png')
-pygame.display.set_icon(favicon)
-
-# Carga la música
-pygame.mixer.music.load('Su Turno.ogg')
-pygame.mixer.music.play(-1)
 
 # Configuración de la pantalla
 ancho_pantalla = 900
@@ -23,11 +15,17 @@ alto_pantalla = 700
 pantalla = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
 pygame.display.set_caption("Juego del Ahorcado")
 
-# Cargar la fuente Roboto
+# Cargar recursos
+favicon = pygame.image.load('ahorcado_6.png')
+pygame.display.set_icon(favicon)
+pygame.mixer.music.load('Su Turno.ogg')
+pygame.mixer.music.play(-1)
+
+# Cargar fuentes
 fuente = pygame.font.Font("Roboto-Regular.ttf", 54)
 fuente_chica = pygame.font.Font("Roboto-Regular.ttf", 36)
 
-# Colores
+# Definición de colores
 WHITE = (255, 255, 255)
 BLUE = (10, 58, 194)
 BLACK = (0, 0, 0)
@@ -38,6 +36,7 @@ VERDE = (2, 111, 0)
 # Variables de categoría
 categorias = ["Frutas", "Conceptos_informaticos", "Nombres_persona"]
 
+# Conexión a la base de datos
 def conexion():
     return mysql.connector.connect(
         host="localhost",
@@ -46,10 +45,12 @@ def conexion():
         database="ahorcado"
     )
 
+# Funciones de manejo de palabras
 def obtener_palabras(categoria):
     """Recupera una lista de palabras de la base de datos según la categoría seleccionada."""
     bd = conexion()
     cursor = bd.cursor()
+
     if categoria == 'Frutas':
         cursor.execute("SELECT nombre FROM Frutas")
     elif categoria == 'Conceptos_informaticos':
@@ -62,6 +63,7 @@ def obtener_palabras(categoria):
     bd.close()
     return [palabra[0] for palabra in palabras]
 
+# Funciones de actualización de estadísticas
 def actualizar_victorias(usuario):
     """Actualiza el contador de partidas ganadas del usuario en la base de datos."""
     bd = conexion()
@@ -86,15 +88,18 @@ def obtener_datos_usuario(usuario):
     cursor = bd.cursor()
     cursor.execute("SELECT SUM(partidas_ganadas), SUM(partidas_perdidas) FROM usuarios WHERE nombre = %s", (usuario,))
     datos = cursor.fetchone()
+
     if datos is None or datos[0] is None or datos[1] is None:
         # Si el usuario no existe, insertarlo en la base de datos
         cursor.execute("INSERT INTO usuarios (nombre, partidas_ganadas, partidas_perdidas) VALUES (%s, 0, 0)", (usuario,))
         bd.commit()
         datos = (0, 0)
+
     cursor.close()
     bd.close()
     return datos
 
+# Funciones de visualización
 def mostrar_imagen(intentos):
     """Carga y muestra una imagen del ahorcado correspondiente al número de intentos fallidos."""
     ruta_imagen = f"ahorcado_{intentos}.png"
@@ -108,6 +113,7 @@ def mostrar_imagen(intentos):
     pygame.display.flip()
 
 def mostrar_interfaz(usuario, categoria, partidas_ganadas, partidas_perdidas):
+    """Muestra la interfaz del juego con estadísticas del usuario."""
     pantalla.fill(ORO)
     texto_titulo = fuente.render("El juego del Ahorcado", True, BLUE)
     pantalla.blit(texto_titulo, (ancho_pantalla // 2 - texto_titulo.get_width() // 2, 50))
@@ -164,8 +170,10 @@ def mostrar_resultado_final(adivinada, palabra, usuario):
                 if boton_reinicio.collidepoint(event.pos):
                     reiniciar = True
 
+# Función principal del juego
 def jugar(usuario, categoria):
     partidas_ganadas, partidas_perdidas = obtener_datos_usuario(usuario)
+
     while True:  # Bucle para permitir reiniciar el juego
         lista_palabras = obtener_palabras(categoria)
         palabra = random.choice(lista_palabras).upper()
@@ -209,46 +217,53 @@ def jugar(usuario, categoria):
 
         mostrar_resultado_final(adivinada, palabra, usuario)
 
+# Función de configuración inicial
+def obtener_datos_iniciales():
+    """Crea una ventana de Tkinter para solicitar el nombre del usuario y la categoría."""
+    ventana_configuracion = tk.Tk()
+    ventana_configuracion.geometry(f"{ancho_pantalla}x{alto_pantalla}")
+    ventana_configuracion.title("Configuración del Juego del Ahorcado")
+    ventana_configuracion.config(bg="#a89159")
 
-def obtener_nombre_usuario():
-    """Crea una ventana de Tkinter para solicitar el nombre del usuario."""
-    root = tk.Tk()
-    root.withdraw()  # Oculta la ventana principal
-    usuario = simpledialog.askstring("Nombre de Usuario", "Introduce tu nombre de usuario:")
-    root.destroy()  # Cierra la ventana de entrada
-    return usuario
+    # Centrar la ventana en la pantalla
+    ventana_configuracion.update_idletasks()  # Actualiza las tareas pendientes para obtener el tamaño correcto
+    width = ventana_configuracion.winfo_width()
+    height = ventana_configuracion.winfo_height()
+    x = (ventana_configuracion.winfo_screenwidth() // 2) - (width // 2) - 10
+    y = (ventana_configuracion.winfo_screenheight() // 2) - (height // 2) - 30
+    ventana_configuracion.geometry(f'{width}x{height}+{x}+{y}')
 
-def seleccionar_categoria():
-    """Crea un desplegable para seleccionar la categoría."""
-    root = tk.Tk()
-    root.title("Selecciona la Categoría")
+    # Variable para el nombre del usuario
+    usuario_var = StringVar()
+    tk.Label(ventana_configuracion, text="Nombre de Usuario:", font=("Roboto", 24), bg="#a89159", fg="blue").pack(pady=(100, 0))
+    entrada_usuario = tk.Entry(ventana_configuracion, textvariable=usuario_var, font=("Roboto", 20))
+    entrada_usuario.pack(pady=(10,50))
 
     # Variable para la categoría seleccionada
     categoria_var = StringVar()
-    categorias = ["Frutas", "Conceptos_informaticos", "Nombres_persona"]
-
-    # Crear el combobox
-    combo = ttk.Combobox(root, textvariable=categoria_var, values=categorias)
-    combo.pack(pady=20)
+    tk.Label(ventana_configuracion, text="Selecciona la Categoría:", font=("Roboto", 24), bg="#a89159", fg="blue").pack(pady=10)
+    combo = ttk.Combobox(ventana_configuracion, textvariable=categoria_var, values=categorias, font=("Roboto", 18), width=20)
+    combo.pack(pady=10)
     combo.current(0)  # Seleccionar la primera categoría por defecto
 
-    # Botón para confirmar la selección
-    def confirmar():
-        root.destroy()
+    # Botón para confirmar y comenzar el juego
+    def comenzar_juego():
+        usuario = usuario_var.get()
+        categoria = categoria_var.get()
+        if usuario and categoria:
+            ventana_configuracion.destroy()
+            jugar(usuario, categoria)
 
-    boton_confirmar = tk.Button(root, text="Confirmar", command=confirmar)
-    boton_confirmar.pack(pady=10)
+    boton_jugar = tk.Button(ventana_configuracion, text="Jugar", command=comenzar_juego, bg="red", fg="white", width=20, height=2)
+    boton_jugar.pack(pady=20)
 
-    root.mainloop()
+    ventana_configuracion.mainloop()
 
-    return categoria_var.get()
 
+# Función principal
 def main():
-    """Función principal que solicita el nombre del usuario y llama a jugar()."""
-    usuario = obtener_nombre_usuario()
-    if usuario:
-        categoria = seleccionar_categoria()
-        jugar(usuario, categoria)
+    """Función principal que solicita el nombre del usuario y la categoría, luego llama a jugar()."""
+    obtener_datos_iniciales()
     pygame.quit()
     sys.exit()
 
